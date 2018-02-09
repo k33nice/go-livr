@@ -5,13 +5,10 @@ import (
 	"strconv"
 )
 
-// Decimal - check that validated value is decimal number.
-func Decimal(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// decimal - check that validated value is decimal number.
+func decimal(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -31,13 +28,10 @@ func Decimal(args ...interface{}) func(...interface{}) (interface{}, interface{}
 	}
 }
 
-// Integer - make sure that validated value is integer.
-func Integer(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// integer - make sure that validated value is integer.
+func integer(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -62,8 +56,8 @@ func Integer(args ...interface{}) func(...interface{}) (interface{}, interface{}
 	}
 }
 
-// MaxNumber - make sure that the validated value is not bigger than some number.
-func MaxNumber(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// maxNumber - make sure that the validated value is not bigger than some number.
+func maxNumber(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var maxNumber float64
 	if len(args) > 0 {
 		if v, ok := args[0].(float64); ok {
@@ -72,10 +66,7 @@ func MaxNumber(args ...interface{}) func(...interface{}) (interface{}, interface
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -102,8 +93,8 @@ func MaxNumber(args ...interface{}) func(...interface{}) (interface{}, interface
 	}
 }
 
-// MinNumber - make sure that the validated value is not lower than some number.
-func MinNumber(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// minNumber - make sure that the validated value is not lower than some number.
+func minNumber(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var minNumber float64
 	if len(args) > 0 {
 		if v, ok := args[0].(float64); ok {
@@ -112,10 +103,7 @@ func MinNumber(args ...interface{}) func(...interface{}) (interface{}, interface
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -142,8 +130,8 @@ func MinNumber(args ...interface{}) func(...interface{}) (interface{}, interface
 	}
 }
 
-// NumberBetween - make sure that validated value is number between minNumber and maxNumber.
-func NumberBetween(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// numberBetween - make sure that validated value is number between minNumber and maxNumber.
+func numberBetween(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var minNumber, maxNumber float64
 	if len(args) > 1 {
 		if v, ok := args[0].(float64); ok {
@@ -155,10 +143,7 @@ func NumberBetween(args ...interface{}) func(...interface{}) (interface{}, inter
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -191,13 +176,10 @@ func NumberBetween(args ...interface{}) func(...interface{}) (interface{}, inter
 	}
 }
 
-// PositiveInteger - make sure that validated value is positive integer number.
-func PositiveInteger(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// positiveInteger - make sure that validated value is positive integer number.
+func positiveInteger(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -221,13 +203,10 @@ func PositiveInteger(args ...interface{}) func(...interface{}) (interface{}, int
 	}
 }
 
-// PositiveDecimal - make sure that validated value is positive decimal number.
-func PositiveDecimal(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// positiveDecimal - make sure that validated value is positive decimal number.
+func positiveDecimal(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}

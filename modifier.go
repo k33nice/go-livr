@@ -8,18 +8,12 @@ import (
 	"strings"
 )
 
-// Default - set default for validated value.
-func Default(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
-	var defVal interface{}
-	if len(args) > 0 {
-		defVal = args[0]
-	}
+// _default - set default for validated value.
+func _default(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+	defVal := firstArg(args...)
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var val interface{}
-		if len(builders) > 0 {
-			val = builders[0]
-		}
+		val := firstArg(builders...)
 
 		if val == nil || val == "" {
 			return defVal, nil
@@ -29,13 +23,10 @@ func Default(args ...interface{}) func(...interface{}) (interface{}, interface{}
 	}
 }
 
-// Trim - trim spaces from validated value.
-func Trim(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// trim - trim spaces from validated value.
+func trim(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var val interface{}
-		if len(builders) > 0 {
-			val = builders[0]
-		}
+		val := firstArg(builders...)
 
 		if val == nil || val == "" {
 			return val, nil
@@ -64,13 +55,10 @@ func Trim(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// ToLc - convert validated value to lower case.
-func ToLc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// toLc - convert validated value to lower case.
+func toLc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var val interface{}
-		if len(builders) > 0 {
-			val = builders[0]
-		}
+		val := firstArg(builders...)
 
 		if val == nil || val == "" {
 			return val, nil
@@ -97,13 +85,10 @@ func ToLc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// ToUc - convert validated value to upper case.
-func ToUc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// toUc - convert validated value to upper case.
+func toUc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var val interface{}
-		if len(builders) > 0 {
-			val = builders[0]
-		}
+		val := firstArg(builders...)
 
 		if val == nil || val == "" {
 			return val, nil
@@ -130,8 +115,8 @@ func ToUc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// Remove - remove specified characters from value.
-func Remove(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// remove - remove specified characters from value.
+func remove(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var chars string
 	if len(args) > 0 {
 		if v, ok := args[0].(string); ok {
@@ -140,10 +125,7 @@ func Remove(args ...interface{}) func(...interface{}) (interface{}, interface{})
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var val interface{}
-		if len(builders) > 0 {
-			val = builders[0]
-		}
+		val := firstArg(builders...)
 
 		re, err := regexp.Compile(fmt.Sprintf("[%s]", strings.Replace(regexp.QuoteMeta(chars), "-", `\-`, -1)))
 		if err != nil {
@@ -168,8 +150,8 @@ func Remove(args ...interface{}) func(...interface{}) (interface{}, interface{})
 	}
 }
 
-// LeaveOnly - leave only specified characters in value.
-func LeaveOnly(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// leaveOnly - leave only specified characters in value.
+func leaveOnly(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var chars string
 	if len(args) > 0 {
 		if v, ok := args[0].(string); ok {
@@ -178,10 +160,7 @@ func LeaveOnly(args ...interface{}) func(...interface{}) (interface{}, interface
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var val interface{}
-		if len(builders) > 0 {
-			val = builders[0]
-		}
+		val := firstArg(builders...)
 
 		re, err := regexp.Compile(fmt.Sprintf("[^%s]", strings.Replace(regexp.QuoteMeta(chars), "-", `\-`, -1)))
 		if err != nil {

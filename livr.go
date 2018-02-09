@@ -39,51 +39,51 @@ var defaultRules map[string]Builder
 func init() {
 	defaultRules = map[string]Builder{
 		// Common related rules.
-		"required":       Required,
-		"not_empty":      NotEmpty,
-		"not_empty_list": NotEmptyList,
-		"any_object":     AnyObject,
+		"required":       required,
+		"not_empty":      notEmpty,
+		"not_empty_list": notEmptyList,
+		"any_object":     anyObject,
 
 		// Text related rules.
-		"one_of":         OneOf,
-		"eq":             Eq,
-		"string":         String,
-		"min_length":     MinLength,
-		"max_length":     MaxLength,
-		"length_equal":   LengthEqual,
-		"length_between": LengthBetween,
-		"like":           Like,
+		"one_of":         oneOf,
+		"eq":             eq,
+		"string":         _string,
+		"min_length":     minLength,
+		"max_length":     maxLength,
+		"length_equal":   lengthEqual,
+		"length_between": lengthBetween,
+		"like":           like,
 
 		// Rules for real numbers.
-		"integer":          Integer,
-		"positive_integer": PositiveInteger,
-		"decimal":          Decimal,
-		"positive_decimal": PositiveDecimal,
-		"min_number":       MinNumber,
-		"max_number":       MaxNumber,
-		"number_between":   NumberBetween,
+		"integer":          integer,
+		"positive_integer": positiveInteger,
+		"decimal":          decimal,
+		"positive_decimal": positiveDecimal,
+		"min_number":       minNumber,
+		"max_number":       maxNumber,
+		"number_between":   numberBetween,
 
 		// Misc rules.
-		"email":          Email,
-		"equal_to_field": EqualToField,
-		"url":            URL,
-		"iso_date":       ISODate,
+		"email":          email,
+		"equal_to_field": equalToField,
+		"url":            url,
+		"iso_date":       isoDate,
 
 		// Meta rules.
-		"nested_object":             NestedObject,
-		"list_of":                   ListOf,
-		"list_of_objects":           ListOfObjects,
-		"list_of_different_objects": ListOfDifferentObjects,
-		"variable_object":           VariableObject,
-		"or":                        Or,
+		"nested_object":             nestedObject,
+		"list_of":                   listOf,
+		"list_of_objects":           listOfObjects,
+		"list_of_different_objects": listOfDifferentObjects,
+		"variable_object":           variableObject,
+		"or":                        or,
 
 		// Modifires - allows to change or sanitize value.
-		"default":    Default,
-		"trim":       Trim,
-		"to_lc":      ToLc,
-		"to_uc":      ToUc,
-		"remove":     Remove,
-		"leave_only": LeaveOnly,
+		"default":    _default,
+		"trim":       trim,
+		"to_lc":      toLc,
+		"to_uc":      toUc,
+		"remove":     remove,
+		"leave_only": leaveOnly,
 	}
 }
 

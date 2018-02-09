@@ -67,8 +67,9 @@ func TestPositive(t *testing.T) {
 		eq := JSONDuckEqual(output, r)
 		if !eq {
 			t.Errorf(fErr("FAIL"))
+		} else {
+			printS("PASS\n")
 		}
-		printS("PASS\n")
 	}
 }
 
@@ -108,8 +109,9 @@ func TestNegative(t *testing.T) {
 		eq := JSONDuckEqual(output, indirectErrors(v.Errors()))
 		if !eq {
 			t.Errorf(fErr("FAIL"))
+		} else {
+			printS("PASS\n")
 		}
-		printS("PASS\n")
 	}
 }
 
@@ -156,8 +158,9 @@ func TestAliasesPositive(t *testing.T) {
 		eq := JSONDuckEqual(output, re)
 		if !eq {
 			t.Error(fErr("FAIL"))
+		} else {
+			printS("PASS\n")
 		}
-		printS("PASS\n")
 	}
 }
 
@@ -204,8 +207,9 @@ func TestAliasesNegative(t *testing.T) {
 		eq := JSONDuckEqual(output, indirectErrors(v.Errors()))
 		if !eq {
 			t.Errorf(fErr("FAIL"))
+		} else {
+			printS("PASS\n")
 		}
-		printS("PASS\n")
 	}
 }
 

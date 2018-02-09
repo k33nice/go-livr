@@ -5,8 +5,8 @@ import (
 	"reflect"
 )
 
-// NestedObject - check that validated value is object.
-func NestedObject(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// nestedObject - check that validated value is object.
+func nestedObject(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var lr Dictionary
 	var rB map[string]Builder
 	if len(args) > 1 {
@@ -24,10 +24,7 @@ func NestedObject(args ...interface{}) func(...interface{}) (interface{}, interf
 	validator.prepare()
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var nestedObject interface{}
-		if len(builders) > 0 {
-			nestedObject = builders[0]
-		}
+		nestedObject := firstArg(builders...)
 
 		if nestedObject == nil || nestedObject == "" {
 			return nil, nil
@@ -46,15 +43,12 @@ func NestedObject(args ...interface{}) func(...interface{}) (interface{}, interf
 	}
 }
 
-// ListOf - check that validated value is list of some objects.
-func ListOf(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
-	var firstArg interface{}
-	if len(args) > 0 {
-		firstArg = args[0]
-	}
+// listOf - check that validated value is list of some objects.
+func listOf(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+	fa := firstArg(args...)
 
 	var lr, rB interface{}
-	if v, ok := firstArg.([]interface{}); ok {
+	if v, ok := fa.([]interface{}); ok {
 		lr = v
 		if len(args) > 1 {
 			rB = args[1]
@@ -68,10 +62,7 @@ func ListOf(args ...interface{}) func(...interface{}) (interface{}, interface{})
 	validator.prepare()
 	validator.registerRules(rB.(map[string]Builder))
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var values interface{}
-		if len(builders) > 0 {
-			values = builders[0]
-		}
+		values := firstArg(builders...)
 
 		if values == nil || values == "" {
 			return nil, nil
@@ -112,8 +103,8 @@ func ListOf(args ...interface{}) func(...interface{}) (interface{}, interface{})
 	}
 }
 
-// ListOfObjects - check that validated value is list of some objects.
-func ListOfObjects(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// listOfObjects - check that validated value is list of some objects.
+func listOfObjects(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var lr Dictionary
 	var rB map[string]Builder
 	if len(args) > 1 {
@@ -129,13 +120,10 @@ func ListOfObjects(args ...interface{}) func(...interface{}) (interface{}, inter
 	validator.prepare()
 	validator.registerRules(rB)
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var objects interface{}
-		if len(builders) > 0 {
-			objects = builders[0]
-		}
+		objects := firstArg(builders...)
 
 		if objects == nil || objects == "" {
-			return nil, nil
+			return objects, nil
 		}
 
 		rt := reflect.TypeOf(objects)
@@ -176,8 +164,8 @@ func ListOfObjects(args ...interface{}) func(...interface{}) (interface{}, inter
 	}
 }
 
-// ListOfDifferentObjects - checks that validated value is one of specified objects.
-func ListOfDifferentObjects(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// listOfDifferentObjects - checks that validated value is one of specified objects.
+func listOfDifferentObjects(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var validators = make(map[string]*Validator)
 
 	var selField string
@@ -253,16 +241,13 @@ func ListOfDifferentObjects(args ...interface{}) func(...interface{}) (interface
 	}
 }
 
-// Or - check that validated value is one of specified.
-func Or(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
-	var firstArg interface{}
-	if len(args) > 0 {
-		firstArg = args[0]
-	}
+// or - check that validated value is one of specified.
+func or(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+	fa := firstArg(args...)
 
 	var lrs []interface{}
 	var rB map[string]Builder
-	if v, ok := firstArg.([]interface{}); ok {
+	if v, ok := fa.([]interface{}); ok {
 		lrs = v
 		if v, ok := args[2].(map[string]Builder); ok {
 			rB = v
@@ -289,13 +274,10 @@ func Or(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var val interface{}
-		if len(builders) > 1 {
-			val = builders[0]
-		}
+		val := firstArg(builders...)
 
 		if val == nil || val == "" {
-			return nil, nil
+			return val, nil
 		}
 
 		var lastErr interface{}
@@ -317,8 +299,8 @@ func Or(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// VariableObject - check that validated value is one of specified depends on some inner value.
-func VariableObject(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// variableObject - check that validated value is one of specified depends on some inner value.
+func variableObject(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var validators = make(map[string]*Validator)
 
 	var selField string
@@ -348,10 +330,7 @@ func VariableObject(args ...interface{}) func(...interface{}) (interface{}, inte
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var object interface{}
-		if len(builders) > 1 {
-			object = builders[0]
-		}
+		object := firstArg(builders...)
 
 		if _, ok := object.(Dictionary); !ok {
 			return nil, errors.New("FORMAT_ERROR")

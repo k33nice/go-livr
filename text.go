@@ -8,18 +8,12 @@ import (
 	"unicode/utf8"
 )
 
-// Eq - make sure that validated value is equal to some value.
-func Eq(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
-	var allowed interface{}
-	if len(args) > 0 {
-		allowed = args[0]
-	}
+// eq - make sure that validated value is equal to some value.
+func eq(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+	allowed := firstArg(args...)
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 
 		if value == nil || value == "" {
 			return nil, nil
@@ -38,8 +32,8 @@ func Eq(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// LengthBetween - make sure that validated value's length is between specified length.
-func LengthBetween(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// lengthBetween - make sure that validated value's length is between specified length.
+func lengthBetween(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var minLength, maxLength float64
 	if len(args) > 1 {
 		if v, ok := args[0].(float64); ok {
@@ -50,10 +44,7 @@ func LengthBetween(args ...interface{}) func(...interface{}) (interface{}, inter
 		}
 	}
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -89,8 +80,8 @@ func LengthBetween(args ...interface{}) func(...interface{}) (interface{}, inter
 	}
 }
 
-// LengthEqual - make sure that validated value's length is equal to specified length.
-func LengthEqual(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// lengthEqual - make sure that validated value's length is equal to specified length.
+func lengthEqual(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var length float64
 	if len(args) > 0 {
 		if v, ok := args[0].(float64); ok {
@@ -99,10 +90,7 @@ func LengthEqual(args ...interface{}) func(...interface{}) (interface{}, interfa
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -138,8 +126,8 @@ func LengthEqual(args ...interface{}) func(...interface{}) (interface{}, interfa
 	}
 }
 
-// Like - check that validated value is like specified regexp.
-func Like(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// like - check that validated value is like specified regexp.
+func like(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var re *regexp.Regexp
 	var flags string
 	if len(args) > 0 {
@@ -162,10 +150,7 @@ func Like(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -187,8 +172,8 @@ func Like(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// MaxLength - check that validated value's length is not longer than specified.
-func MaxLength(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// maxLength - check that validated value's length is not longer than specified.
+func maxLength(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var minLength float64
 	if len(args) > 0 {
 		if v, ok := args[0].(float64); ok {
@@ -197,10 +182,7 @@ func MaxLength(args ...interface{}) func(...interface{}) (interface{}, interface
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -227,8 +209,8 @@ func MaxLength(args ...interface{}) func(...interface{}) (interface{}, interface
 	}
 }
 
-// MinLength - check that validated value's length is not shorter than specified.
-func MinLength(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// minLength - check that validated value's length is not shorter than specified.
+func minLength(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var minLength float64
 	if len(args) > 0 {
 		if v, ok := args[0].(float64); ok {
@@ -237,10 +219,7 @@ func MinLength(args ...interface{}) func(...interface{}) (interface{}, interface
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -267,8 +246,8 @@ func MinLength(args ...interface{}) func(...interface{}) (interface{}, interface
 	}
 }
 
-// OneOf - check that validated value is one of specified.
-func OneOf(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// oneOf - check that validated value is one of specified.
+func oneOf(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var allowed []interface{}
 	if len(args) > 0 {
 		if v, ok := args[0].([]interface{}); ok {
@@ -279,10 +258,7 @@ func OneOf(args ...interface{}) func(...interface{}) (interface{}, interface{}) 
 	}
 
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -338,13 +314,10 @@ func OneOf(args ...interface{}) func(...interface{}) (interface{}, interface{}) 
 	}
 }
 
-// String - check that validated value is string-like.
-func String(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// _string - check that validated value is string-like.
+func _string(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}

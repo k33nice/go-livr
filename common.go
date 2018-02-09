@@ -5,13 +5,10 @@ import (
 	"reflect"
 )
 
-// AnyObject - rule for checking that validated value is not empty object.
-func AnyObject(...interface{}) func(...interface{}) (interface{}, interface{}) {
+// anyObject - rule for checking that validated value is not empty object.
+func anyObject(...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -27,13 +24,10 @@ func AnyObject(...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// NotEmpty - check that validated value is not empty if exists.
-func NotEmpty(...interface{}) func(...interface{}) (interface{}, interface{}) {
+// notEmpty - check that validated value is not empty if exists.
+func notEmpty(...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 
 		if value == nil {
 			// TODO: return error
@@ -48,13 +42,10 @@ func NotEmpty(...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// NotEmptyList - check that validated value is not empty list.
-func NotEmptyList(...interface{}) func(...interface{}) (interface{}, interface{}) {
+// notEmptyList - check that validated value is not empty list.
+func notEmptyList(...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 
 		if value == nil || value == "" {
 			return nil, errors.New("CANNOT_BE_EMPTY")
@@ -72,13 +63,10 @@ func NotEmptyList(...interface{}) func(...interface{}) (interface{}, interface{}
 	}
 }
 
-// Required - checks that validated value exists and not empty.
-func Required(...interface{}) func(...interface{}) (interface{}, interface{}) {
+// required - checks that validated value exists and not empty.
+func required(...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
 			return nil, errors.New("REQUIRED")
 		}

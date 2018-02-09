@@ -9,16 +9,13 @@ import (
 
 var dateReg = regexp.MustCompile(`^(\d{4})-(\d{2})-(\d{2})$`)
 
-// ISODate - make sure that validated value is valid date in format "2006-01-02" ("YYYY-MM-DD").
-func ISODate(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// isoDate - make sure that validated value is valid date in format "2006-01-02" ("YYYY-MM-DD").
+func isoDate(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 
 		if value == nil || value == "" {
-			return nil, nil
+			return value, nil
 		}
 
 		if _, ok := value.(string); !ok {
@@ -42,15 +39,12 @@ var urlRe = regexp.MustCompile(
 	`(?i)^(?:(?:http|https)://)(?:\S+(?::\S*)?@)?(?:(?:(?:[1-9]\d?|1\d\d|2[0-1]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[0-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9]-*)*[a-z0-9]+)(?:\.(?:[a-z0-9]-*)*[a-z0-9]+)*(?:\.(?:[a-z]{2,})))\.?|localhost)(?::\d{2,5})?(?:[/?#]\S*)?$`,
 )
 
-// URL - make sure that validated value is valid url.
-func URL(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// url - make sure that validated value is valid url.
+func url(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
-			return nil, nil
+			return value, nil
 		}
 
 		if _, ok := value.(string); !ok {
@@ -68,15 +62,12 @@ var emailRe = regexp.MustCompile(
 	`(?i)^([\w\-_+]+(?:\.[\w\-_+]+)*)@((?:[\w\-]+\.)*\w[\w\-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$`,
 )
 
-// Email - make sure that validated value is valid email address.
-func Email(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// email - make sure that validated value is valid email address.
+func email(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
-		if len(builders) > 0 {
-			value = builders[0]
-		}
+		value := firstArg(builders...)
 		if value == nil || value == "" {
-			return nil, nil
+			return value, nil
 		}
 
 		if _, ok := value.(string); !ok {
@@ -97,8 +88,8 @@ func Email(args ...interface{}) func(...interface{}) (interface{}, interface{}) 
 	}
 }
 
-// EqualToField - make sure that validated value is equal to some filed.
-func EqualToField(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+// equalToField - make sure that validated value is equal to some filed.
+func equalToField(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var field string
 	if len(args) > 0 {
 		if v, ok := args[0].(string); ok {
@@ -116,7 +107,7 @@ func EqualToField(args ...interface{}) func(...interface{}) (interface{}, interf
 			}
 		}
 		if value == nil || value == "" {
-			return nil, nil
+			return value, nil
 		}
 
 		var expectedVal interface{}
