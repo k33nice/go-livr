@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Default -
+// Default - set default for validated value.
 func Default(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var defVal interface{}
 	if len(args) > 0 {
@@ -29,7 +29,7 @@ func Default(args ...interface{}) func(...interface{}) (interface{}, interface{}
 	}
 }
 
-// Trim -
+// Trim - trim spaces from validated value.
 func Trim(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
 		var val interface{}
@@ -64,7 +64,7 @@ func Trim(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// ToLc -
+// ToLc - convert validated value to lower case.
 func ToLc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
 		var val interface{}
@@ -97,7 +97,7 @@ func ToLc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// ToUc -
+// ToUc - convert validated value to upper case.
 func ToUc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
 		var val interface{}
@@ -130,7 +130,7 @@ func ToUc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// Remove -
+// Remove - remove specified characters from value.
 func Remove(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var chars string
 	if len(args) > 0 {
@@ -168,7 +168,7 @@ func Remove(args ...interface{}) func(...interface{}) (interface{}, interface{})
 	}
 }
 
-// LeaveOnly -
+// LeaveOnly - leave only specified characters in value.
 func LeaveOnly(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var chars string
 	if len(args) > 0 {

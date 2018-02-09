@@ -161,6 +161,54 @@ func TestAliasesPositive(t *testing.T) {
 	}
 }
 
+func TestAliasesNegative(t *testing.T) {
+	suites := files("aliases_negative")
+	for _, suite := range suites {
+		files, err := ioutil.ReadDir(filepath.Join("livr/test_suite/aliases_negative", suite.Name()))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		printS("\n••• Run test for suite %s... •••\n", suite.Name())
+
+		var rules, input, output map[string]interface{}
+		var aliases []livr.Alias
+		for _, f := range files {
+			data, err := ioutil.ReadFile(filepath.Join("livr/test_suite/aliases_negative", suite.Name(), f.Name()))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			switch fileBase(f.Name()) {
+			case "rules":
+				json.Unmarshal(data, &rules)
+			case "input":
+				json.Unmarshal(data, &input)
+			case "errors":
+				json.Unmarshal(data, &output)
+			case "aliases":
+				json.Unmarshal(data, &aliases)
+			}
+
+		}
+		v := livr.New(&livr.Options{LivrRules: rules})
+
+		for _, a := range aliases {
+			v.RegisterAliasedRule(a)
+		}
+		_, err = v.Validate(input)
+		if err == nil {
+			t.Error("Validation pass but must fail")
+		}
+
+		eq := JSONDuckEqual(output, indirectErrors(v.Errors()))
+		if !eq {
+			t.Errorf(fErr("FAIL"))
+		}
+		printS("PASS\n")
+	}
+}
+
 func indirectErrors(errs interface{}) interface{} {
 	var res interface{}
 	switch e := errs.(type) {

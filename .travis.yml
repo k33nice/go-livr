@@ -1,0 +1,14 @@
+language: go
+
+go:
+  - 1.9.x
+  - master
+
+git:
+  submodules: false
+
+before_script:
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  - git submodule update --init --recursive
+
+script: go test ./test -v

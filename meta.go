@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// NestedObject -
+// NestedObject - check that validated value is object.
 func NestedObject(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var lr Dictionary
 	var rB map[string]Builder
@@ -46,7 +46,7 @@ func NestedObject(args ...interface{}) func(...interface{}) (interface{}, interf
 	}
 }
 
-// ListOf -
+// ListOf - check that validated value is list of some objects.
 func ListOf(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var firstArg interface{}
 	if len(args) > 0 {
@@ -112,7 +112,7 @@ func ListOf(args ...interface{}) func(...interface{}) (interface{}, interface{})
 	}
 }
 
-// ListOfObjects -
+// ListOfObjects - check that validated value is list of some objects.
 func ListOfObjects(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var lr Dictionary
 	var rB map[string]Builder
@@ -176,7 +176,7 @@ func ListOfObjects(args ...interface{}) func(...interface{}) (interface{}, inter
 	}
 }
 
-// ListOfDifferentObjects -
+// ListOfDifferentObjects - checks that validated value is one of specified objects.
 func ListOfDifferentObjects(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var validators = make(map[string]*Validator)
 
@@ -253,7 +253,7 @@ func ListOfDifferentObjects(args ...interface{}) func(...interface{}) (interface
 	}
 }
 
-// Or -
+// Or - check that validated value is one of specified.
 func Or(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var firstArg interface{}
 	if len(args) > 0 {
@@ -317,7 +317,7 @@ func Or(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// VariableObject -
+// VariableObject - check that validated value is one of specified depends on some inner value.
 func VariableObject(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var validators = make(map[string]*Validator)
 

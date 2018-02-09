@@ -1,5 +1,9 @@
-## NAME
+## Validator LIVR
 Validator LIVR - Lightweight validator supporting Language Independent Validation Rules Specification (LIVR).
+
+[![Build Status](https://travis-ci.org/k33nice/go-livr.svg?branch=master)](https://travis-ci.org/k33nice/go-livr)
+[![Documentation](https://godoc.org/github.com/k33nice/go-livr?status.svg)](https://godoc.org/github.com/k33nice/go-livr)
+[![release](https://img.shields.io/badge/release-v2.0.0-blue.svg)](https://github.com/k33nice/go-livr/releases/tag/v2.0.0)
 
 ## USAGE
 
@@ -79,21 +83,31 @@ Feel free to register your own rules.
 	v.RegisterAliasedRule(a)
 ```
 
+## TESTING
+1. Clone and update subomodule with test cases
+```sh
+git submodule update --init --recursive
+```
+2. Run tests.
+```sh
+go test ./test -v
+```
+
 ## DESCRIPTION
 See [LIVR Specification](http://livr-spec.org) for detailed documentation and list of supported rules.
 
-Features:
+### Features:
 
- * Rules are declarative and language independent
- * Any number of rules for each field
- * Return together errors for all fields
- * Excludes all fields that do not have validation rules described
- * Has possibility to validate complex hierarchical structures
- * Easy to describe and understand rules
- * Returns understandable error codes(not error messages)
- * Easy to add own rules
- * Rules are be able to change results output ("trim", "nested\_object", for example)
- * Multipurpose (user input validation, configs validation, contracts programming etc)
+- [x] Rules are declarative and language independent
+- [x] Any number of rules for each field
+- [x] Return together errors for all fields
+- [x] Excludes all fields that do not have validation rules described
+- [x] Has possibility to validate complex hierarchical structures
+- [x] Easy to describe and understand rules
+- [x] Returns understandable error codes(not error messages)
+- [x] Easy to add own rules
+- [x] Rules are be able to change results output ("trim", "nested\_object", for example)
+- [x] Multipurpose (user input validation, configs validation, contracts programming etc)
 
 ## LICENSE
 Distributed under MIT License, please see [license](https://github.com/k33nice/go-livr/blob/master/LICENSE) file within the code for more details.

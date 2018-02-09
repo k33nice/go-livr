@@ -38,7 +38,7 @@ func Eq(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// LengthBetween -
+// LengthBetween - make sure that validated value's length is between specified length.
 func LengthBetween(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var minLength, maxLength float64
 	if len(args) > 1 {
@@ -89,7 +89,7 @@ func LengthBetween(args ...interface{}) func(...interface{}) (interface{}, inter
 	}
 }
 
-// LengthEqual -
+// LengthEqual - make sure that validated value's length is equal to specified length.
 func LengthEqual(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var length float64
 	if len(args) > 0 {
@@ -138,7 +138,7 @@ func LengthEqual(args ...interface{}) func(...interface{}) (interface{}, interfa
 	}
 }
 
-// Like -
+// Like - check that validated value is like specified regexp.
 func Like(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var re *regexp.Regexp
 	var flags string
@@ -187,7 +187,7 @@ func Like(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	}
 }
 
-// MaxLength -
+// MaxLength - check that validated value's length is not longer than specified.
 func MaxLength(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var minLength float64
 	if len(args) > 0 {
@@ -227,7 +227,7 @@ func MaxLength(args ...interface{}) func(...interface{}) (interface{}, interface
 	}
 }
 
-// MinLength -
+// MinLength - check that validated value's length is not shorter than specified.
 func MinLength(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var minLength float64
 	if len(args) > 0 {
@@ -267,7 +267,7 @@ func MinLength(args ...interface{}) func(...interface{}) (interface{}, interface
 	}
 }
 
-// OneOf -
+// OneOf - check that validated value is one of specified.
 func OneOf(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	var allowed []interface{}
 	if len(args) > 0 {
@@ -338,7 +338,7 @@ func OneOf(args ...interface{}) func(...interface{}) (interface{}, interface{}) 
 	}
 }
 
-// String -
+// String - check that validated value is string-like.
 func String(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 	return func(builders ...interface{}) (interface{}, interface{}) {
 		var value interface{}

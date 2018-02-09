@@ -154,8 +154,8 @@ func (v *Validator) buildAliasedRule(a Alias) Builder {
 				if a.Error != "" {
 					return nil, errors.New(a.Error)
 				}
-				if e, ok := errs["value"]; ok {
-					return nil, e
+				if err, ok := errs["value"]; ok {
+					return nil, err
 				}
 
 				return nil, validator.Errors()["value"]
