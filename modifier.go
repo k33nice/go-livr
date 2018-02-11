@@ -9,12 +9,10 @@ import (
 )
 
 // _default - set default for validated value.
-func _default(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+func _default(args ...interface{}) Validation {
 	defVal := firstArg(args...)
 
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		val := firstArg(builders...)
-
+	return func(val interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if val == nil || val == "" {
 			return defVal, nil
 		}
@@ -24,10 +22,8 @@ func _default(args ...interface{}) func(...interface{}) (interface{}, interface{
 }
 
 // trim - trim spaces from validated value.
-func trim(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		val := firstArg(builders...)
-
+func trim(args ...interface{}) Validation {
+	return func(val interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if val == nil || val == "" {
 			return val, nil
 		}
@@ -56,10 +52,8 @@ func trim(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 }
 
 // toLc - convert validated value to lower case.
-func toLc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		val := firstArg(builders...)
-
+func toLc(args ...interface{}) Validation {
+	return func(val interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if val == nil || val == "" {
 			return val, nil
 		}
@@ -86,10 +80,8 @@ func toLc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 }
 
 // toUc - convert validated value to upper case.
-func toUc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		val := firstArg(builders...)
-
+func toUc(args ...interface{}) Validation {
+	return func(val interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if val == nil || val == "" {
 			return val, nil
 		}
@@ -116,7 +108,7 @@ func toUc(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
 }
 
 // remove - remove specified characters from value.
-func remove(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+func remove(args ...interface{}) Validation {
 	var chars string
 	if len(args) > 0 {
 		if v, ok := args[0].(string); ok {
@@ -124,9 +116,7 @@ func remove(args ...interface{}) func(...interface{}) (interface{}, interface{})
 		}
 	}
 
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		val := firstArg(builders...)
-
+	return func(val interface{}, builders ...interface{}) (interface{}, interface{}) {
 		re, err := regexp.Compile(fmt.Sprintf("[%s]", strings.Replace(regexp.QuoteMeta(chars), "-", `\-`, -1)))
 		if err != nil {
 			return val, nil
@@ -151,7 +141,7 @@ func remove(args ...interface{}) func(...interface{}) (interface{}, interface{})
 }
 
 // leaveOnly - leave only specified characters in value.
-func leaveOnly(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+func leaveOnly(args ...interface{}) Validation {
 	var chars string
 	if len(args) > 0 {
 		if v, ok := args[0].(string); ok {
@@ -159,9 +149,7 @@ func leaveOnly(args ...interface{}) func(...interface{}) (interface{}, interface
 		}
 	}
 
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		val := firstArg(builders...)
-
+	return func(val interface{}, builders ...interface{}) (interface{}, interface{}) {
 		re, err := regexp.Compile(fmt.Sprintf("[^%s]", strings.Replace(regexp.QuoteMeta(chars), "-", `\-`, -1)))
 		if err != nil {
 			return val, nil

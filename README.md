@@ -1,12 +1,20 @@
 ## Validator LIVR
-Validator LIVR - Lightweight validator supporting Language Independent Validation Rules Specification (LIVR).
 
 [![Build Status](https://travis-ci.org/k33nice/go-livr.svg?branch=master)](https://travis-ci.org/k33nice/go-livr)
 [![Documentation](https://godoc.org/github.com/k33nice/go-livr?status.svg)](https://godoc.org/github.com/k33nice/go-livr)
 [![release](https://img.shields.io/badge/release-v2.0.0-blue.svg)](https://github.com/k33nice/go-livr/releases/tag/v2.0.0)
 
-## USAGE
+Validator LIVR - Lightweight validator supporting Language Independent Validation Rules Specification (LIVR).
 
+### Introduction
+
+One of the biggest advantages is language independent. There are implementations on other languages so you can use your
+validation rules in applications on different programming languages.
+For example, if you write web application with back-end on Go, you can use your validation rules in front-end (JS)
+and back-end (Go).
+By reusing your rules, you solve one the most tricky problem of inconsitent validation of the same data.
+
+## USAGE
 1. Download and install.
 ```sh
 go get github.com/k33nice/go-livr
@@ -64,6 +72,16 @@ func main() {
 }
 ```
 
+If you want, you can get rid of json unmarshal.
+```go
+type d livr.Dictionary
+
+var rules = d{
+	"name": d{"nested_object": "required"},
+}
+validator := livr.New(&livr.Options{LivrRules: rules})
+```
+
 You can use modifiers separately or can combine them with validation:
 ```go
 var jsonRules = `{
@@ -73,14 +91,14 @@ var jsonRules = `{
 
 Feel free to register your own rules.
 ```go
-	v := livr.New(&livr.Options{LivrRules: rules})
+v := livr.New(&livr.Options{LivrRules: rules})
 
-	a := livr.Alias{
-		Name:  "strong_password",
-		Rules: livr.Dictionary{"min_length": 6},
-		Error: "WEAK_PASSWORD",
-	}
-	v.RegisterAliasedRule(a)
+a := livr.Alias{
+	Name:  "strong_password",
+	Rules: livr.Dictionary{"min_length": 6},
+	Error: "WEAK_PASSWORD",
+}
+v.RegisterAliasedRule(a)
 ```
 
 ## TESTING

@@ -6,9 +6,8 @@ import (
 )
 
 // anyObject - rule for checking that validated value is not empty object.
-func anyObject(...interface{}) func(...interface{}) (interface{}, interface{}) {
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		value := firstArg(builders...)
+func anyObject(...interface{}) Validation {
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -25,10 +24,8 @@ func anyObject(...interface{}) func(...interface{}) (interface{}, interface{}) {
 }
 
 // notEmpty - check that validated value is not empty if exists.
-func notEmpty(...interface{}) func(...interface{}) (interface{}, interface{}) {
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		value := firstArg(builders...)
-
+func notEmpty(...interface{}) Validation {
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if value == nil {
 			// TODO: return error
 			return nil, nil
@@ -43,9 +40,8 @@ func notEmpty(...interface{}) func(...interface{}) (interface{}, interface{}) {
 }
 
 // notEmptyList - check that validated value is not empty list.
-func notEmptyList(...interface{}) func(...interface{}) (interface{}, interface{}) {
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		value := firstArg(builders...)
+func notEmptyList(...interface{}) Validation {
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
 
 		if value == nil || value == "" {
 			return nil, errors.New("CANNOT_BE_EMPTY")
@@ -64,9 +60,8 @@ func notEmptyList(...interface{}) func(...interface{}) (interface{}, interface{}
 }
 
 // required - checks that validated value exists and not empty.
-func required(...interface{}) func(...interface{}) (interface{}, interface{}) {
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		value := firstArg(builders...)
+func required(...interface{}) Validation {
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if value == nil || value == "" {
 			return nil, errors.New("REQUIRED")
 		}

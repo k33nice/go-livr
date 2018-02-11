@@ -10,10 +10,8 @@ import (
 var dateReg = regexp.MustCompile(`^(\d{4})-(\d{2})-(\d{2})$`)
 
 // isoDate - make sure that validated value is valid date in format "2006-01-02" ("YYYY-MM-DD").
-func isoDate(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		value := firstArg(builders...)
-
+func isoDate(args ...interface{}) Validation {
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -40,9 +38,8 @@ var urlRe = regexp.MustCompile(
 )
 
 // url - make sure that validated value is valid url.
-func url(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		value := firstArg(builders...)
+func url(args ...interface{}) Validation {
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -63,9 +60,8 @@ var emailRe = regexp.MustCompile(
 )
 
 // email - make sure that validated value is valid email address.
-func email(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		value := firstArg(builders...)
+func email(args ...interface{}) Validation {
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if value == nil || value == "" {
 			return value, nil
 		}
@@ -89,7 +85,7 @@ func email(args ...interface{}) func(...interface{}) (interface{}, interface{}) 
 }
 
 // equalToField - make sure that validated value is equal to some filed.
-func equalToField(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+func equalToField(args ...interface{}) Validation {
 	var field string
 	if len(args) > 0 {
 		if v, ok := args[0].(string); ok {
@@ -97,12 +93,10 @@ func equalToField(args ...interface{}) func(...interface{}) (interface{}, interf
 		}
 	}
 
-	return func(builders ...interface{}) (interface{}, interface{}) {
-		var value interface{}
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
 		var params Dictionary
-		if len(builders) > 1 {
-			value = builders[0]
-			if v, ok := builders[1].(Dictionary); ok {
+		if len(builders) > 0 {
+			if v, ok := builders[0].(Dictionary); ok {
 				params = v
 			}
 		}

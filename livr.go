@@ -7,20 +7,23 @@ import (
 )
 
 // Version is LIVR current semver
-const Version = "2.0.0-alpha"
+const Version = "2.0.0"
 
 // Dictionary - is dictionary alias.
 type Dictionary = map[string]interface{}
 
+// Validation - function in which made all validation checks.
+type Validation = func(interface{}, ...interface{}) (interface{}, interface{})
+
 // Builder - common type for building validators.
-type Builder = func(...interface{}) func(...interface{}) (interface{}, interface{})
+type Builder = func(...interface{}) Validation
 
 // Validator - Validator object.
 type Validator struct {
 	once sync.Once
 
 	livrRules         Dictionary
-	validators        map[string][]func(...interface{}) (interface{}, interface{})
+	validators        map[string][]Validation
 	validatorBuilders map[string]Builder
 
 	errs map[string]interface{}
@@ -96,7 +99,7 @@ func New(opts *Options) *Validator {
 	v := &Validator{
 		livrRules:         opts.LivrRules,
 		validatorBuilders: make(map[string]Builder),
-		validators:        make(map[string][]func(...interface{}) (interface{}, interface{})),
+		validators:        make(map[string][]Validation),
 		isAutoTrim:        at,
 	}
 
@@ -138,16 +141,16 @@ func (v *Validator) buildAliasedRule(a Alias) Builder {
 		panic("Alias rules required")
 	}
 
-	return func(args ...interface{}) func(...interface{}) (interface{}, interface{}) {
+	return func(args ...interface{}) Validation {
 		validator := New(&Options{LivrRules: Dictionary{"value": a.Rules}})
 		validator.registerRules(args[0].(map[string]Builder))
 		validator.prepare()
 
-		return func(builders ...interface{}) (interface{}, interface{}) {
-			var value interface{}
-			if len(builders) > 0 {
-				value = builders[0]
-			}
+		return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
+			// var value interface{}
+			// if len(builders) > 0 {
+			//     value = builders[0]
+			// }
 			res, err := validator.Validate(Dictionary{"value": value})
 			if err != nil {
 				errs := validator.Errors()
@@ -174,7 +177,7 @@ func (v *Validator) DefaultRules() map[string]Builder {
 }
 
 // Rules - return validator rules.
-func (v *Validator) Rules() map[string][]func(...interface{}) (interface{}, interface{}) {
+func (v *Validator) Rules() map[string][]Validation {
 	return v.validators
 }
 
@@ -247,7 +250,7 @@ func (v *Validator) prepare() {
 			if _, ok := fieldRules.([]interface{}); !ok {
 				fieldRules = []interface{}{fieldRules}
 			}
-			var validators []func(...interface{}) (interface{}, interface{})
+			var validators []Validation
 			for _, rawRule := range fieldRules.([]interface{}) {
 				name, args := parseRule(rawRule)
 				validators = append(validators, v.buildValidator(name, args))
@@ -257,7 +260,7 @@ func (v *Validator) prepare() {
 	})
 }
 
-func (v *Validator) buildValidator(name string, args []interface{}) func(...interface{}) (interface{}, interface{}) {
+func (v *Validator) buildValidator(name string, args []interface{}) Validation {
 	if _, ok := v.validatorBuilders[name]; !ok {
 		log.Panicf("Rule %s not registerd", name)
 	}
