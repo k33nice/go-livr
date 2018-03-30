@@ -1,3 +1,3 @@
 [submodule "test/livr"]
 	path = test/livr
-	url = git@github.com:koorchik/LIVR.git
+	url = https://github.com/koorchik/LIVR.git
