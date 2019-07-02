@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/k33nice/go-livr.svg?branch=master)](https://travis-ci.org/k33nice/go-livr)
 [![Documentation](https://godoc.org/github.com/k33nice/go-livr?status.svg)](https://godoc.org/github.com/k33nice/go-livr)
 [![release](https://img.shields.io/badge/release-v2.0.0-blue.svg)](https://github.com/k33nice/go-livr/releases/tag/v2.0.0)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fk33nice%2Fgo-livr.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fk33nice%2Fgo-livr?ref=badge_shield)
 
 Validator LIVR - Lightweight validator supporting Language Independent Validation Rules Specification (LIVR).
 
@@ -129,3 +130,6 @@ See [LIVR Specification](http://livr-spec.org) for detailed documentation and li
 
 ## LICENSE
 Distributed under MIT License, please see [license](https://github.com/k33nice/go-livr/blob/master/LICENSE) file within the code for more details.
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fk33nice%2Fgo-livr.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fk33nice%2Fgo-livr?ref=badge_large)
