@@ -262,7 +262,7 @@ func (v *Validator) prepare() {
 
 func (v *Validator) buildValidator(name string, args []interface{}) Validation {
 	if _, ok := v.validatorBuilders[name]; !ok {
-		log.Panicf("Rule %s not registerd", name)
+		log.Panicf("Rule %s not registered", name)
 	}
 
 	args = append(args, v.validatorBuilders)
