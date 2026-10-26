@@ -1,6 +1,6 @@
 ## Validator LIVR
 
-[![Build Status](https://travis-ci.org/k33nice/go-livr.svg?branch=master)](https://travis-ci.org/k33nice/go-livr)
+[![Go](https://github.com/k33nice/go-livr/actions/workflows/go.yml/badge.svg)](https://github.com/k33nice/go-livr/actions/workflows/go.yml)
 [![Documentation](https://godoc.org/github.com/k33nice/go-livr?status.svg)](https://godoc.org/github.com/k33nice/go-livr)
 [![release](https://img.shields.io/badge/release-v2.0.0-blue.svg)](https://github.com/k33nice/go-livr/releases/tag/v2.0.0)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fk33nice%2Fgo-livr.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fk33nice%2Fgo-livr?ref=badge_shield)
@@ -107,8 +107,10 @@ v.RegisterAliasedRule(a)
 ```sh
 git submodule update --init --recursive
 ```
-2. Run tests.
+2. Run tests. The repository has no go.mod, so with Go modules create a temporary one first
+(as the CI does; older Go versions need an older fatih/color, see .github/workflows/go.yml).
 ```sh
+go mod init github.com/k33nice/go-livr && go mod tidy
 go test ./test -v
 ```
 
