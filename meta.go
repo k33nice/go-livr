@@ -3,6 +3,7 @@ package livr
 import (
 	"errors"
 	"reflect"
+	"strconv"
 )
 
 // nestedObject - check that validated value is object.
@@ -190,31 +191,25 @@ func listOfDifferentObjects(args ...interface{}) Validation {
 	}
 
 	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
-		var objects []interface{}
-		if len(builders) > 0 {
-			if v, ok := value.([]interface{}); ok {
-				objects = v
-			}
+		if value == nil || value == "" {
+			return nil, nil
+		}
+
+		objects, ok := value.([]interface{})
+		if !ok {
+			return nil, errors.New("FORMAT_ERROR")
 		}
 
 		var results, errs []interface{}
 		var hasError bool
 		for _, object := range objects {
-			if _, ok := object.(Dictionary); !ok {
-				errs = append(errs, errors.New("FORMAT_ERROR"))
-				continue
-			}
-			if _, ok := object.(Dictionary)[selField]; !ok {
-				errs = append(errs, errors.New("FORMAT_ERROR"))
-				continue
-			}
-			// TODO: check it.
-			if v, ok := validators[object.(Dictionary)[selField].(string)]; !ok || v == nil {
+			v := selectValidator(validators, object, selField)
+			if v == nil {
+				hasError = true
 				errs = append(errs, errors.New("FORMAT_ERROR"))
 				continue
 			}
 
-			v := validators[object.(Dictionary)[selField].(string)]
 			r, err := v.Validate(object.(Dictionary))
 
 			if err == nil {
@@ -237,25 +232,11 @@ func listOfDifferentObjects(args ...interface{}) Validation {
 
 // or - check that validated value is one of specified.
 func or(args ...interface{}) Validation {
-	fa := firstArg(args...)
-
-	var lrs []interface{}
+	// Every argument but the last (the rule builders) is a set of rules.
+	lrs := args[0 : len(args)-1]
 	var rB map[string]Builder
-	if v, ok := fa.([]interface{}); ok {
-		lrs = v
-		if v, ok := args[2].(map[string]Builder); ok {
-			rB = v
-		}
-		if len(args) > 1 {
-			if v, ok := args[1].(map[string]Builder); ok {
-				rB = v
-			}
-		}
-	} else {
-		lrs = args[0 : len(args)-1]
-		if v, ok := args[len(args)-1].(map[string]Builder); ok {
-			rB = v
-		}
+	if v, ok := args[len(args)-1].(map[string]Builder); ok {
+		rB = v
 	}
 
 	var validators []*Validator
@@ -268,10 +249,7 @@ func or(args ...interface{}) Validation {
 	}
 
 	return func(val interface{}, builders ...interface{}) (interface{}, interface{}) {
-		if val == nil || val == "" {
-			return val, nil
-		}
-
+		// No check for an empty value: the sets of rules decide (they may contain "required").
 		var lastErr interface{}
 		for _, validator := range validators {
 			r, err := validator.Validate(Dictionary{"field": val})
@@ -322,18 +300,14 @@ func variableObject(args ...interface{}) Validation {
 	}
 
 	return func(object interface{}, builders ...interface{}) (interface{}, interface{}) {
-		if _, ok := object.(Dictionary); !ok {
-			return nil, errors.New("FORMAT_ERROR")
-		}
-		if _, ok := object.(Dictionary)[selField]; !ok {
-			return nil, errors.New("FORMAT_ERROR")
-		}
-		// TODO: check it.
-		if v, ok := validators[object.(Dictionary)[selField].(string)]; !ok || v == nil {
-			return nil, errors.New("FORMAT_ERROR")
+		if object == nil || object == "" {
+			return nil, nil
 		}
 
-		v := validators[object.(Dictionary)[selField].(string)]
+		v := selectValidator(validators, object, selField)
+		if v == nil {
+			return nil, errors.New("FORMAT_ERROR")
+		}
 
 		r, err := v.Validate(object.(Dictionary))
 		if err != nil {
@@ -341,4 +315,37 @@ func variableObject(args ...interface{}) Validation {
 		}
 		return r, nil
 	}
+}
+
+// selectValidator - return the validator chosen by the selector field of object,
+// or nil if object is not an object or the selector value is not a non-empty string,
+// a non-zero number or true listed in the rules.
+func selectValidator(validators map[string]*Validator, object interface{}, selField string) *Validator {
+	obj, ok := object.(Dictionary)
+	if !ok {
+		return nil
+	}
+
+	var selVal string
+	switch v := obj[selField].(type) {
+	case string:
+		if v == "" {
+			return nil
+		}
+		selVal = v
+	case float64:
+		if v == 0 {
+			return nil
+		}
+		selVal = strconv.FormatFloat(v, 'f', -1, 64)
+	case bool:
+		if !v {
+			return nil
+		}
+		selVal = "true"
+	default:
+		return nil
+	}
+
+	return validators[selVal]
 }
