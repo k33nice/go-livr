@@ -95,3 +95,32 @@ func TestEmptyList(t *testing.T) {
 		t.Errorf("got %s, want %s", got, want)
 	}
 }
+
+func TestAliasInMetaRules(t *testing.T) {
+	v := livr.New(&livr.Options{LivrRules: livr.Dictionary{
+		"list_of":         livr.Dictionary{"list_of": "short"},
+		"list_of_objects": livr.Dictionary{"list_of_objects": livr.Dictionary{"a": "short"}},
+		"list_of_different_objects": livr.Dictionary{"list_of_different_objects": []interface{}{
+			"type", livr.Dictionary{"x": livr.Dictionary{"a": "short"}},
+		}},
+		"variable_object": livr.Dictionary{"variable_object": []interface{}{
+			"type", livr.Dictionary{"x": livr.Dictionary{"a": "short"}},
+		}},
+		"or": livr.Dictionary{"or": []interface{}{"short", "email"}},
+	}})
+	v.RegisterAliasedRule(livr.Alias{Name: "short", Rules: livr.Dictionary{"max_length": 2.0}, Error: "TOO_LONG"})
+
+	v.Validate(livr.Dictionary{
+		"list_of":                   []interface{}{"abc"},
+		"list_of_objects":           []interface{}{livr.Dictionary{"a": "abc"}},
+		"list_of_different_objects": []interface{}{livr.Dictionary{"type": "x", "a": "abc"}},
+		"variable_object":           livr.Dictionary{"type": "x", "a": "abc"},
+		"or":                        "abc",
+	})
+	data, _ := json.Marshal(indirectErrors(v.Errors()))
+	want := `{"list_of":["TOO_LONG"],"list_of_different_objects":[{"a":"TOO_LONG"}],` +
+		`"list_of_objects":[{"a":"TOO_LONG"}],"or":"WRONG_EMAIL","variable_object":{"a":"TOO_LONG"}}`
+	if string(data) != want {
+		t.Errorf("got %s, want %s", data, want)
+	}
+}

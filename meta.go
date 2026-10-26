@@ -58,8 +58,8 @@ func listOf(args ...interface{}) Validation {
 	}
 
 	validator := New(&Options{LivrRules: Dictionary{"field": lr}})
-	validator.prepare()
 	validator.registerRules(rB.(map[string]Builder))
+	validator.prepare()
 	return func(values interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if values == nil || values == "" {
 			return nil, nil
@@ -115,8 +115,8 @@ func listOfObjects(args ...interface{}) Validation {
 	}
 
 	validator := New(&Options{LivrRules: lr})
-	validator.prepare()
 	validator.registerRules(rB)
+	validator.prepare()
 	return func(objects interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if objects == nil || objects == "" {
 			return objects, nil
@@ -187,8 +187,8 @@ func listOfDifferentObjects(args ...interface{}) Validation {
 			continue
 		}
 		validator := New(&Options{LivrRules: rules})
-		validator.prepare()
 		validator.registerRules(rB)
+		validator.prepare()
 		validators[selVal] = validator
 	}
 
@@ -246,8 +246,8 @@ func or(args ...interface{}) Validation {
 
 	for _, lr := range lrs {
 		validator := New(&Options{LivrRules: Dictionary{"field": lr}})
-		validator.prepare()
 		validator.registerRules(rB)
+		validator.prepare()
 		validators = append(validators, validator)
 	}
 
@@ -297,8 +297,8 @@ func variableObject(args ...interface{}) Validation {
 			continue
 		}
 		validator := New(&Options{LivrRules: rules})
-		validator.prepare()
 		validator.registerRules(rB)
+		validator.prepare()
 		validators[selVal] = validator
 	}
 
