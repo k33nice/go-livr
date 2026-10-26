@@ -79,3 +79,19 @@ func TestVariableObject(t *testing.T) {
 		t.Errorf("got %s, want %s", got, want)
 	}
 }
+
+func TestEmptyList(t *testing.T) {
+	got := validateJSON(livr.Dictionary{
+		"list_of":                   livr.Dictionary{"list_of": "string"},
+		"list_of_objects":           livr.Dictionary{"list_of_objects": livr.Dictionary{"a": "string"}},
+		"list_of_different_objects": livr.Dictionary{"list_of_different_objects": []interface{}{"type", livr.Dictionary{}}},
+	}, livr.Dictionary{
+		"list_of":                   []interface{}{},
+		"list_of_objects":           []interface{}{},
+		"list_of_different_objects": []interface{}{},
+	})
+	want := `{"list_of":[],"list_of_different_objects":[],"list_of_objects":[]}`
+	if got != want {
+		t.Errorf("got %s, want %s", got, want)
+	}
+}

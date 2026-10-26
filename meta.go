@@ -72,7 +72,8 @@ func listOf(args ...interface{}) Validation {
 		}
 
 		s := reflect.ValueOf(values)
-		var results, errs []interface{}
+		results := make([]interface{}, 0, s.Len())
+		var errs []interface{}
 		var hasError bool
 		for i := 0; i < s.Len(); i++ {
 			r, err := validator.Validate(Dictionary{"field": s.Index(i).Interface()})
@@ -129,7 +130,8 @@ func listOfObjects(args ...interface{}) Validation {
 
 		s := reflect.ValueOf(objects)
 
-		var results, errs []interface{}
+		results := make([]interface{}, 0, s.Len())
+		var errs []interface{}
 		var hasError bool
 		for i := 0; i < s.Len(); i++ {
 
@@ -200,7 +202,8 @@ func listOfDifferentObjects(args ...interface{}) Validation {
 			return nil, errors.New("FORMAT_ERROR")
 		}
 
-		var results, errs []interface{}
+		results := make([]interface{}, 0, len(objects))
+		var errs []interface{}
 		var hasError bool
 		for _, object := range objects {
 			v := selectValidator(validators, object, selField)
