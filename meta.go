@@ -3,6 +3,7 @@ package livr
 import (
 	"errors"
 	"reflect"
+	"strconv"
 )
 
 // nestedObject - check that validated value is object.
@@ -57,8 +58,8 @@ func listOf(args ...interface{}) Validation {
 	}
 
 	validator := New(&Options{LivrRules: Dictionary{"field": lr}})
-	validator.prepare()
 	validator.registerRules(rB.(map[string]Builder))
+	validator.prepare()
 	return func(values interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if values == nil || values == "" {
 			return nil, nil
@@ -71,7 +72,8 @@ func listOf(args ...interface{}) Validation {
 		}
 
 		s := reflect.ValueOf(values)
-		var results, errs []interface{}
+		results := make([]interface{}, 0, s.Len())
+		var errs []interface{}
 		var hasError bool
 		for i := 0; i < s.Len(); i++ {
 			r, err := validator.Validate(Dictionary{"field": s.Index(i).Interface()})
@@ -113,8 +115,8 @@ func listOfObjects(args ...interface{}) Validation {
 	}
 
 	validator := New(&Options{LivrRules: lr})
-	validator.prepare()
 	validator.registerRules(rB)
+	validator.prepare()
 	return func(objects interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if objects == nil || objects == "" {
 			return objects, nil
@@ -128,7 +130,8 @@ func listOfObjects(args ...interface{}) Validation {
 
 		s := reflect.ValueOf(objects)
 
-		var results, errs []interface{}
+		results := make([]interface{}, 0, s.Len())
+		var errs []interface{}
 		var hasError bool
 		for i := 0; i < s.Len(); i++ {
 
@@ -184,37 +187,32 @@ func listOfDifferentObjects(args ...interface{}) Validation {
 			continue
 		}
 		validator := New(&Options{LivrRules: rules})
-		validator.prepare()
 		validator.registerRules(rB)
+		validator.prepare()
 		validators[selVal] = validator
 	}
 
 	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
-		var objects []interface{}
-		if len(builders) > 0 {
-			if v, ok := value.([]interface{}); ok {
-				objects = v
-			}
+		if value == nil || value == "" {
+			return nil, nil
 		}
 
-		var results, errs []interface{}
+		objects, ok := value.([]interface{})
+		if !ok {
+			return nil, errors.New("FORMAT_ERROR")
+		}
+
+		results := make([]interface{}, 0, len(objects))
+		var errs []interface{}
 		var hasError bool
 		for _, object := range objects {
-			if _, ok := object.(Dictionary); !ok {
-				errs = append(errs, errors.New("FORMAT_ERROR"))
-				continue
-			}
-			if _, ok := object.(Dictionary)[selField]; !ok {
-				errs = append(errs, errors.New("FORMAT_ERROR"))
-				continue
-			}
-			// TODO: check it.
-			if v, ok := validators[object.(Dictionary)[selField].(string)]; !ok || v == nil {
+			v := selectValidator(validators, object, selField)
+			if v == nil {
+				hasError = true
 				errs = append(errs, errors.New("FORMAT_ERROR"))
 				continue
 			}
 
-			v := validators[object.(Dictionary)[selField].(string)]
 			r, err := v.Validate(object.(Dictionary))
 
 			if err == nil {
@@ -237,41 +235,24 @@ func listOfDifferentObjects(args ...interface{}) Validation {
 
 // or - check that validated value is one of specified.
 func or(args ...interface{}) Validation {
-	fa := firstArg(args...)
-
-	var lrs []interface{}
+	// Every argument but the last (the rule builders) is a set of rules.
+	lrs := args[0 : len(args)-1]
 	var rB map[string]Builder
-	if v, ok := fa.([]interface{}); ok {
-		lrs = v
-		if v, ok := args[2].(map[string]Builder); ok {
-			rB = v
-		}
-		if len(args) > 1 {
-			if v, ok := args[1].(map[string]Builder); ok {
-				rB = v
-			}
-		}
-	} else {
-		lrs = args[0 : len(args)-1]
-		if v, ok := args[len(args)-1].(map[string]Builder); ok {
-			rB = v
-		}
+	if v, ok := args[len(args)-1].(map[string]Builder); ok {
+		rB = v
 	}
 
 	var validators []*Validator
 
 	for _, lr := range lrs {
 		validator := New(&Options{LivrRules: Dictionary{"field": lr}})
-		validator.prepare()
 		validator.registerRules(rB)
+		validator.prepare()
 		validators = append(validators, validator)
 	}
 
 	return func(val interface{}, builders ...interface{}) (interface{}, interface{}) {
-		if val == nil || val == "" {
-			return val, nil
-		}
-
+		// No check for an empty value: the sets of rules decide (they may contain "required").
 		var lastErr interface{}
 		for _, validator := range validators {
 			r, err := validator.Validate(Dictionary{"field": val})
@@ -316,24 +297,20 @@ func variableObject(args ...interface{}) Validation {
 			continue
 		}
 		validator := New(&Options{LivrRules: rules})
-		validator.prepare()
 		validator.registerRules(rB)
+		validator.prepare()
 		validators[selVal] = validator
 	}
 
 	return func(object interface{}, builders ...interface{}) (interface{}, interface{}) {
-		if _, ok := object.(Dictionary); !ok {
-			return nil, errors.New("FORMAT_ERROR")
-		}
-		if _, ok := object.(Dictionary)[selField]; !ok {
-			return nil, errors.New("FORMAT_ERROR")
-		}
-		// TODO: check it.
-		if v, ok := validators[object.(Dictionary)[selField].(string)]; !ok || v == nil {
-			return nil, errors.New("FORMAT_ERROR")
+		if object == nil || object == "" {
+			return nil, nil
 		}
 
-		v := validators[object.(Dictionary)[selField].(string)]
+		v := selectValidator(validators, object, selField)
+		if v == nil {
+			return nil, errors.New("FORMAT_ERROR")
+		}
 
 		r, err := v.Validate(object.(Dictionary))
 		if err != nil {
@@ -341,4 +318,37 @@ func variableObject(args ...interface{}) Validation {
 		}
 		return r, nil
 	}
+}
+
+// selectValidator - return the validator chosen by the selector field of object,
+// or nil if object is not an object or the selector value is not a non-empty string,
+// a non-zero number or true listed in the rules.
+func selectValidator(validators map[string]*Validator, object interface{}, selField string) *Validator {
+	obj, ok := object.(Dictionary)
+	if !ok {
+		return nil
+	}
+
+	var selVal string
+	switch v := obj[selField].(type) {
+	case string:
+		if v == "" {
+			return nil
+		}
+		selVal = v
+	case float64:
+		if v == 0 {
+			return nil
+		}
+		selVal = strconv.FormatFloat(v, 'f', -1, 64)
+	case bool:
+		if !v {
+			return nil
+		}
+		selVal = "true"
+	default:
+		return nil
+	}
+
+	return validators[selVal]
 }

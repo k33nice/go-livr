@@ -55,8 +55,11 @@ func url(args ...interface{}) Validation {
 	}
 }
 
+// One "@" only, and no "_" in the domain: a quoted local part cannot contain "@",
+// the domain cannot contain "_" or "@".
+// \s\p{Z}\x0B\x{FEFF} is the whitespace that \s matches in JavaScript.
 var emailRe = regexp.MustCompile(
-	`(?i)^([\w\-_+]+(?:\.[\w\-_+]+)*)@((?:[\w\-]+\.)*\w[\w\-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$`,
+	`^(?:[^<>()\[\]\\.,;:\s\p{Z}\x0B\x{FEFF}@"]+(?:\.[^<>()\[\]\\.,;:\s\p{Z}\x0B\x{FEFF}@"]+)*|"[^@\n\r\x{2028}\x{2029}]+")@(?:\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\]|(?:[a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,})$`,
 )
 
 // email - make sure that validated value is valid email address.
@@ -71,12 +74,6 @@ func email(args ...interface{}) Validation {
 		}
 
 		if !emailRe.MatchString(value.(string)) {
-			return nil, errors.New("WRONG_EMAIL")
-		}
-		if regexp.MustCompile(`@.*@`).MatchString(value.(string)) {
-			return nil, errors.New("WRONG_EMAIL")
-		}
-		if regexp.MustCompile(`@.*_`).MatchString(value.(string)) {
 			return nil, errors.New("WRONG_EMAIL")
 		}
 

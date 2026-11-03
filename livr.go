@@ -191,6 +191,10 @@ func (v *Validator) registerRules(rules map[string]Builder) {
 func (v *Validator) Validate(data Dictionary) (Dictionary, error) {
 	v.prepare()
 
+	if v.isAutoTrim {
+		data = autoTrim(data).(Dictionary)
+	}
+
 	res := v.validate(data)
 	if res == nil {
 		return nil, errors.New("validation error")

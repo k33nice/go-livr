@@ -38,9 +38,9 @@ func autoTrim(data interface{}) interface{} {
 		}
 		return trimmedData
 	case []interface{}:
-		var trimmedData []interface{}
-		for val := range d {
-			trimmedData = append(trimmedData, autoTrim(val))
+		var trimmedData = make([]interface{}, len(d))
+		for i, val := range d {
+			trimmedData[i] = autoTrim(val)
 		}
 		return trimmedData
 	default:
