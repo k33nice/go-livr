@@ -214,30 +214,22 @@ func TestAliasesNegative(t *testing.T) {
 }
 
 func indirectErrors(errs interface{}) interface{} {
-	var res interface{}
 	switch e := errs.(type) {
 	case map[string]interface{}:
-		var r = make(map[string]interface{})
+		r := make(map[string]interface{}, len(e))
 		for k, err := range e {
-			switch e := err.(type) {
-			case map[string]interface{}:
-				r[k] = indirectErrors(e)
-			case []interface{}:
-				s := make([]interface{}, len(e))
-				for i, err := range e {
-					s[i] = indirectErrors(err)
-				}
-				r[k] = s
-			case interface{}:
-				if v, ok := e.(error); ok {
-					r[k] = v.Error()
-				}
-			}
+			r[k] = indirectErrors(err)
 		}
-		res = r
+		return r
+	case []interface{}:
+		s := make([]interface{}, len(e))
+		for i, err := range e {
+			s[i] = indirectErrors(err)
+		}
+		return s
 	case error:
-		res = e.Error()
+		return e.Error()
 	}
 
-	return res
+	return nil
 }

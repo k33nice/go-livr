@@ -172,3 +172,35 @@ func leaveOnly(args ...interface{}) Validation {
 		}
 	}
 }
+
+// split - split a string at every separator into a list of strings. A list stays as it is.
+func split(args ...interface{}) Validation {
+	args, _ = ruleArgs(args)
+	var separator string
+	ok := len(args) > 0
+	if ok {
+		separator, ok = stringArg(args[0])
+	}
+	if !ok || separator == "" {
+		schemaErrorf("Rule split takes a non-empty separator")
+	}
+
+	return func(val interface{}, builders ...interface{}) (interface{}, interface{}) {
+		if isEmpty(val) {
+			return val, nil
+		}
+
+		// A number or a boolean is split in its string form, other values stay as they are.
+		s, ok := stringForm(val)
+		if !ok {
+			return val, nil
+		}
+
+		parts := strings.Split(s, separator)
+		results := make([]interface{}, len(parts))
+		for i, part := range parts {
+			results[i] = part
+		}
+		return results, nil
+	}
+}
