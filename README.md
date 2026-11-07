@@ -102,8 +102,47 @@ a := livr.Alias{
 v.RegisterAliasedRule(a)
 ```
 
+Wrong rules (a rule that is not registered, wrong arguments of a rule) are reported when the
+validator is built. `Validate` builds it on the first call and panics with a `*livr.SchemaError`
+then; call `Prepare` to get the error before.
+```go
+v := livr.New(&livr.Options{LivrRules: rules})
+if err := v.Prepare(); err != nil {
+	panic(err) // for example: Rule no_such_rule not registered
+}
+```
+
+### LIVR 2.5
+The rules added in [LIVR 2.5](https://github.com/koorchik/LIVR/blob/master/drafts/v2.5.md)
+([changes](https://livr-spec.org/changes.html#v2-5), [rules](https://livr-spec.org/validation-rules.html))
+are supported. LIVR 2.5 only adds rules to LIVR 2.0, every LIVR 2.0 schema keeps working:
+
+- Types and numbers: `boolean`, `not_one_of`, `max_decimals`
+- Strings: `digits`, `starts_with`, `ends_with`, `contains`
+- Dates and times: `iso_date` with bounds (`{"iso_date": {"max": "today"}}`), `iso_datetime`, `iso_time`
+- Presence and meta rules: `required_if`, `when`, `values`, `keys`, `any`
+- Lists: `list_length`, `unique`
+- Modifiers: `split`
+- Formats: `uuid`, `ip`, `cidr`, `hostname`, `base64`, `hex`, `digest`, `mongo_id`, `hex_color`, `mac`, `e164`, `semver`, `jwt`
+- Checksums: `luhn`, `credit_card`, `iban`
+
+LIVR 2.5 also fixes some rules: the rules of an alias and of `or` see the fields next to the
+validated field (so `equal_to_field` compares with a sibling field there), the rules of `list_of`
+items see no fields, and `iso_date` rejects an argument that is not an object of options
+(`{"iso_date": null}` stays the plain `iso_date`).
+
+The bounds `today`, `yesterday` and `tomorrow` use the current date in UTC. Go cannot replace the
+system clock in tests, so the validator takes a clock (`time.Now` by default):
+```go
+v := livr.New(&livr.Options{
+	LivrRules: rules,
+	Now:       func() time.Time { return time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC) },
+})
+```
+
 ## TESTING
-1. Clone and update subomodule with test cases
+1. Clone and update subomodule with test cases (`test/livr/test_suite` for LIVR 2.0,
+`test/livr/test_suite_2.5` for LIVR 2.5)
 ```sh
 git submodule update --init --recursive
 ```
