@@ -128,8 +128,10 @@ are supported. LIVR 2.5 only adds rules to LIVR 2.0, every LIVR 2.0 schema keeps
 
 LIVR 2.5 also fixes some rules: the rules of an alias and of `or` see the fields next to the
 validated field (so `equal_to_field` compares with a sibling field there), the rules of `list_of`
-items see no fields, and `iso_date` rejects an argument that is not an object of options
-(`{"iso_date": null}` stays the plain `iso_date`).
+items see no fields, `iso_date` rejects an argument that is not an object of options
+(`{"iso_date": null}` stays the plain `iso_date`), and `url` rejects a dot after the host
+(`https://example.com.`), host labels longer than 63 characters and ports above 65535, while
+one-digit ports (`https://example.com:8`) pass.
 
 The bounds `today`, `yesterday` and `tomorrow` use the current date in UTC. Go cannot replace the
 system clock in tests, so the validator takes a clock (`time.Now` by default):
