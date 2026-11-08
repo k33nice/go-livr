@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -258,17 +259,21 @@ func oneOf(args ...interface{}) Validation {
 		for _, val := range allowed {
 			switch v := val.(type) {
 			case bool:
+				// A boolean matches a string in the forms of strconv.ParseBool, "true", "1",
+				// "t", "TRUE" and so on, as before LIVR 2.5.
 				switch vv := value.(type) {
 				case bool:
 					if vv == v {
 						return val, nil
 					}
 				case string:
-					if vs, _ := strconv.ParseBool(vv); vs == v {
+					if vs, err := strconv.ParseBool(vv); err == nil && vs == v {
 						return val, nil
 					}
 				default:
-					return nil, errors.New("FORMAT_ERROR")
+					if _, ok := stringForm(value); !ok {
+						return nil, errors.New("FORMAT_ERROR")
+					}
 				}
 			case string:
 				switch vv := value.(type) {
@@ -323,5 +328,111 @@ func _string(args ...interface{}) Validation {
 		default:
 			return nil, errors.New("FORMAT_ERROR")
 		}
+	}
+}
+
+// notOneOf - check that validated value is none of specified.
+func notOneOf(args ...interface{}) Validation {
+	args, _ = ruleArgs(args)
+	if len(args) == 0 {
+		schemaErrorf("Rule not_one_of takes one or more values")
+	}
+
+	forbidden := make([]string, 0, len(args))
+	for _, arg := range args {
+		s, ok := stringForm(arg)
+		if !ok {
+			schemaErrorf("Rule not_one_of takes primitive values")
+		}
+		forbidden = append(forbidden, s)
+	}
+
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
+		if isEmpty(value) {
+			return value, nil
+		}
+
+		s, ok := stringForm(value)
+		if !ok {
+			return nil, errors.New("FORMAT_ERROR")
+		}
+		if containsString(forbidden, s) {
+			return nil, errors.New("NOT_ALLOWED_VALUE")
+		}
+
+		return value, nil
+	}
+}
+
+// digits - check that validated value is one or more digits 0-9, and convert it to a string.
+func digits(args ...interface{}) Validation {
+	noArgs("digits", args)
+
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
+		if isEmpty(value) {
+			return value, nil
+		}
+
+		s, ok := stringForm(value)
+		if !ok {
+			return nil, errors.New("FORMAT_ERROR")
+		}
+		for i := 0; i < len(s); i++ {
+			if !isDigit(s[i]) {
+				return nil, errors.New("NOT_DIGITS")
+			}
+		}
+
+		return s, nil
+	}
+}
+
+// startsWith - check that validated value starts with one of specified strings.
+func startsWith(args ...interface{}) Validation {
+	return affixRule("starts_with", args, strings.HasPrefix)
+}
+
+// endsWith - check that validated value ends with one of specified strings.
+func endsWith(args ...interface{}) Validation {
+	return affixRule("ends_with", args, strings.HasSuffix)
+}
+
+// contains - check that validated value contains one of specified strings.
+func contains(args ...interface{}) Validation {
+	return affixRule("contains", args, strings.Contains)
+}
+
+// affixRule - check that the string form of validated value matches one of the arguments.
+func affixRule(name string, args []interface{}, matches func(s, affix string) bool) Validation {
+	args, _ = ruleArgs(args)
+	if len(args) == 0 {
+		schemaErrorf("Rule %s takes one or more strings", name)
+	}
+
+	affixes := make([]string, 0, len(args))
+	for _, arg := range args {
+		s, ok := stringArg(arg)
+		if !ok || s == "" {
+			schemaErrorf("Rule %s takes non-empty strings", name)
+		}
+		affixes = append(affixes, s)
+	}
+
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
+		if isEmpty(value) {
+			return value, nil
+		}
+
+		s, ok := stringForm(value)
+		if !ok {
+			return nil, errors.New("FORMAT_ERROR")
+		}
+		for _, affix := range affixes {
+			if matches(s, affix) {
+				return s, nil
+			}
+		}
+
+		return nil, errors.New("WRONG_FORMAT")
 	}
 }

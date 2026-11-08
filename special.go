@@ -4,37 +4,19 @@ import (
 	"errors"
 	"regexp"
 	"strconv"
-	"time"
 )
 
-var dateReg = regexp.MustCompile(`^(\d{4})-(\d{2})-(\d{2})$`)
-
-// isoDate - make sure that validated value is valid date in format "2006-01-02" ("YYYY-MM-DD").
-func isoDate(args ...interface{}) Validation {
-	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
-		if value == nil || value == "" {
-			return value, nil
-		}
-
-		if _, ok := value.(string); !ok {
-			return nil, errors.New("FORMAT_ERROR")
-		}
-
-		t, err := time.Parse("2006-01-02", value.(string))
-		if err != nil {
-			return nil, errors.New("WRONG_DATE")
-		}
-		// TODO: it's can be redundant.
-		if t.Format("2006-01-02") != value.(string) {
-			return nil, errors.New("WRONG_DATE")
-		}
-
-		return value, nil
-	}
-}
-
+// An optional user info, then the host: an IPv4 address (the first byte is 1-223, the last one is
+// not 255), labels followed by a top-level domain of 2-63 letters, or localhost, with no dot after
+// the host. A label has 1-63 characters and does not start or end with "-". Labels cannot contain
+// ".", so they do not overlap. The port is 0-65535 in 1-5 digits.
 var urlRe = regexp.MustCompile(
-	`(?i)^(?:(?:http|https)://)(?:\S+(?::\S*)?@)?(?:(?:(?:[1-9]\d?|1\d\d|2[0-1]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[0-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9]-*)*[a-z0-9]+)(?:\.(?:[a-z0-9]-*)*[a-z0-9]+)*(?:\.(?:[a-z]{2,})))\.?|localhost)(?::\d{2,5})?(?:[/?#]\S*)?$`,
+	`(?i)^(?:(?:http|https)://)(?:\S+(?::\S*)?@)?` +
+		`(?:(?:[1-9]\d?|1\d\d|2[0-1]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[0-9]\d?|1\d\d|2[0-4]\d|25[0-4]))` +
+		`|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}` +
+		`|localhost)` +
+		`(?::(?:[0-9]{1,4}|[0-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?` +
+		`(?:[/?#]\S*)?$`,
 )
 
 // url - make sure that validated value is valid url.

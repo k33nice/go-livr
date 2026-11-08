@@ -2,8 +2,8 @@ package livr
 
 import (
 	"errors"
-	"log"
 	"sync"
+	"time"
 )
 
 // Version is LIVR current semver
@@ -26,7 +26,8 @@ type Validator struct {
 	validators        map[string][]Validation
 	validatorBuilders map[string]Builder
 
-	errs map[string]interface{}
+	errs      map[string]interface{}
+	schemaErr error
 
 	isAutoTrim bool
 }
@@ -35,6 +36,9 @@ type Validator struct {
 type Options struct {
 	LivrRules Dictionary
 	AutoTrim  isAutoTrim
+	// Now - the clock of the "today", "yesterday" and "tomorrow" bounds of the date rules,
+	// time.Now by default (always used in UTC). Tests use it to fix the current date.
+	Now func() time.Time
 }
 
 var defaultRules map[string]Builder
@@ -46,6 +50,9 @@ func init() {
 		"not_empty":      notEmpty,
 		"not_empty_list": notEmptyList,
 		"any_object":     anyObject,
+		"required_if":    requiredIf,
+		"boolean":        boolean,
+		"any":            _any,
 
 		// Text related rules.
 		"one_of":         oneOf,
@@ -56,6 +63,11 @@ func init() {
 		"length_equal":   lengthEqual,
 		"length_between": lengthBetween,
 		"like":           like,
+		"not_one_of":     notOneOf,
+		"digits":         digits,
+		"starts_with":    startsWith,
+		"ends_with":      endsWith,
+		"contains":       contains,
 
 		// Rules for real numbers.
 		"integer":          integer,
@@ -65,12 +77,37 @@ func init() {
 		"min_number":       minNumber,
 		"max_number":       maxNumber,
 		"number_between":   numberBetween,
+		"max_decimals":     maxDecimals,
 
 		// Misc rules.
 		"email":          email,
 		"equal_to_field": equalToField,
 		"url":            url,
-		"iso_date":       isoDate,
+		"iso_date":       isoDate(time.Now),
+		"iso_datetime":   isoDatetime(time.Now),
+		"iso_time":       isoTime,
+
+		// Formats and checksums.
+		"uuid":        uuid,
+		"ip":          ip,
+		"cidr":        cidr,
+		"hostname":    hostname,
+		"base64":      base64,
+		"hex":         hex,
+		"digest":      digest,
+		"mongo_id":    mongoID,
+		"hex_color":   hexColor,
+		"mac":         mac,
+		"e164":        e164,
+		"semver":      semver,
+		"jwt":         jwt,
+		"luhn":        luhn,
+		"credit_card": creditCard,
+		"iban":        iban,
+
+		// Rules for lists.
+		"list_length": listLength,
+		"unique":      unique,
 
 		// Meta rules.
 		"nested_object":             nestedObject,
@@ -79,6 +116,9 @@ func init() {
 		"list_of_different_objects": listOfDifferentObjects,
 		"variable_object":           variableObject,
 		"or":                        or,
+		"when":                      when,
+		"values":                    values,
+		"keys":                      keys,
 
 		// Modifires - allows to change or sanitize value.
 		"default":    _default,
@@ -87,6 +127,7 @@ func init() {
 		"to_uc":      toUc,
 		"remove":     remove,
 		"leave_only": leaveOnly,
+		"split":      split,
 	}
 }
 
@@ -103,7 +144,12 @@ func New(opts *Options) *Validator {
 		isAutoTrim:        at,
 	}
 
-	v.registerRules(defaultRules)
+	// The default rules are not copied: buildValidator finds them, so that building the
+	// validators of nested rules stays cheap.
+	if opts.Now != nil {
+		v.validatorBuilders["iso_date"] = isoDate(opts.Now)
+		v.validatorBuilders["iso_datetime"] = isoDatetime(opts.Now)
+	}
 
 	return v
 }
@@ -142,31 +188,19 @@ func (v *Validator) buildAliasedRule(a Alias) Builder {
 	}
 
 	return func(args ...interface{}) Validation {
-		validator := New(&Options{LivrRules: Dictionary{"value": a.Rules}})
-		validator.registerRules(args[0].(map[string]Builder))
-		validator.prepare()
+		_, rB := ruleArgs(args)
+		validator := fieldValidator(a.Rules, rB)
 
 		return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
-			// var value interface{}
-			// if len(builders) > 0 {
-			//     value = builders[0]
-			// }
-			res, err := validator.Validate(Dictionary{"value": value})
+			// The rules of the alias see the fields next to the field that uses it.
+			res, err := validator.validateField(value, containingObject(builders))
 			if err != nil {
-				errs := validator.Errors()
 				if a.Error != "" {
 					return nil, errors.New(a.Error)
 				}
-				if err, ok := errs["value"]; ok {
-					return nil, err
-				}
-
-				return nil, validator.Errors()["value"]
+				return nil, err
 			}
-			if out, ok := res["value"]; ok {
-				return out, nil
-			}
-			return nil, nil
+			return res, nil
 		}
 	}
 }
@@ -187,7 +221,7 @@ func (v *Validator) registerRules(rules map[string]Builder) {
 	}
 }
 
-// Validate - validate a data.
+// Validate - validate a data. It panics with a *SchemaError for wrong rules (see Prepare).
 func (v *Validator) Validate(data Dictionary) (Dictionary, error) {
 	v.prepare()
 
@@ -195,8 +229,9 @@ func (v *Validator) Validate(data Dictionary) (Dictionary, error) {
 		data = autoTrim(data).(Dictionary)
 	}
 
-	res := v.validate(data)
-	if res == nil {
+	res, errs := v.validate(data, data)
+	v.errs = errs
+	if errs != nil {
 		return nil, errors.New("validation error")
 	}
 
@@ -208,7 +243,9 @@ func (v *Validator) Errors() Dictionary {
 	return v.errs
 }
 
-func (v *Validator) validate(data Dictionary) Dictionary {
+// validate - validate the fields of data. The rules see the fields of params, the containing
+// object: data itself, or the object of a field for the rules of an alias, "or" and "when".
+func (v *Validator) validate(data, params Dictionary) (Dictionary, Dictionary) {
 	results := make(Dictionary)
 	errors := make(Dictionary)
 
@@ -226,7 +263,7 @@ func (v *Validator) validate(data Dictionary) Dictionary {
 			if v, ok := results[fName]; ok {
 				val = v
 			}
-			res, err := validator(val, data)
+			res, err := validator(val, params)
 			if err != nil {
 				errors[fName] = err
 				break
@@ -239,17 +276,27 @@ func (v *Validator) validate(data Dictionary) Dictionary {
 	}
 
 	if len(errors) > 0 {
-		v.errs = errors
-		return nil
+		return nil, errors
 	}
 
-	v.errs = nil
-
-	return results
+	return results, nil
 }
 
-func (v *Validator) prepare() {
+// Prepare - build the validator from the LIVR rules. Validate does it on the first call, Prepare
+// reports wrong rules before: a rule that is not registered or wrong arguments of a rule give a
+// *SchemaError.
+func (v *Validator) Prepare() error {
 	v.once.Do(func() {
+		defer func() {
+			if r := recover(); r != nil {
+				err, ok := r.(*SchemaError)
+				if !ok {
+					panic(r)
+				}
+				v.schemaErr = err
+			}
+		}()
+
 		for field, fieldRules := range v.livrRules {
 			if _, ok := fieldRules.([]interface{}); !ok {
 				fieldRules = []interface{}{fieldRules}
@@ -262,16 +309,32 @@ func (v *Validator) prepare() {
 			v.validators[field] = validators
 		}
 	})
+
+	return v.schemaErr
+}
+
+func (v *Validator) prepare() {
+	if err := v.Prepare(); err != nil {
+		panic(err)
+	}
 }
 
 func (v *Validator) buildValidator(name string, args []interface{}) Validation {
-	if _, ok := v.validatorBuilders[name]; !ok {
-		log.Panicf("Rule %s not registered", name)
+	builder, ok := v.validatorBuilders[name]
+	if !ok {
+		builder, ok = defaultRules[name]
+	}
+	if !ok && name == "" {
+		// A list, an empty object or another value where a rule is expected.
+		schemaErrorf("A rule must be a rule name or an object with a rule name and its arguments")
+	}
+	if !ok {
+		schemaErrorf("Rule %s not registered", name)
 	}
 
 	args = append(args, v.validatorBuilders)
 
-	return v.validatorBuilders[name](args...)
+	return builder(args...)
 }
 
 func parseRule(lr interface{}) (string, []interface{}) {

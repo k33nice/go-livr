@@ -14,10 +14,7 @@ func nestedObject(args ...interface{}) Validation {
 		if v, ok := args[0].(Dictionary); ok {
 			lr = v
 		}
-		if v, ok := args[1].(map[string]Builder); ok {
-			rB = v
-		}
-
+		_, rB = ruleArgs(args)
 	}
 
 	validator := New(&Options{LivrRules: lr})
@@ -48,18 +45,15 @@ func listOf(args ...interface{}) Validation {
 
 	var lr, rB interface{}
 	if v, ok := fa.([]interface{}); ok {
+		// Arguments after the list of rules are ignored.
 		lr = v
-		if len(args) > 1 {
-			rB = args[1]
-		}
+		rB = args[len(args)-1]
 	} else {
 		lr = args[0 : len(args)-1]
 		rB = args[len(args)-1]
 	}
 
-	validator := New(&Options{LivrRules: Dictionary{"field": lr}})
-	validator.registerRules(rB.(map[string]Builder))
-	validator.prepare()
+	validator := fieldValidator(lr, rB.(map[string]Builder))
 	return func(values interface{}, builders ...interface{}) (interface{}, interface{}) {
 		if values == nil || values == "" {
 			return nil, nil
@@ -76,22 +70,17 @@ func listOf(args ...interface{}) Validation {
 		var errs []interface{}
 		var hasError bool
 		for i := 0; i < s.Len(); i++ {
-			r, err := validator.Validate(Dictionary{"field": s.Index(i).Interface()})
+			// Items have no containing object: a reference in their rules is a missing value.
+			r, err := validator.validateField(s.Index(i).Interface(), nil)
 
 			if err != nil {
 				hasError = true
-				errs = append(errs, validator.errs["field"])
+				errs = append(errs, err)
 				results = append(results, nil)
 				continue
-			} else {
-				if res, ok := r["field"]; ok {
-					results = append(results, res)
-					errs = append(errs, nil)
-					continue
-				}
-				results = append(results, nil)
-				errs = append(errs, nil)
 			}
+			results = append(results, r)
+			errs = append(errs, nil)
 		}
 
 		if hasError {
@@ -109,9 +98,7 @@ func listOfObjects(args ...interface{}) Validation {
 		if v, ok := args[0].(Dictionary); ok {
 			lr = v
 		}
-		if v, ok := args[1].(map[string]Builder); ok {
-			rB = v
-		}
+		_, rB = ruleArgs(args)
 	}
 
 	validator := New(&Options{LivrRules: lr})
@@ -176,9 +163,7 @@ func listOfDifferentObjects(args ...interface{}) Validation {
 		if v, ok := args[1].(Dictionary); ok {
 			lrs = v
 		}
-		if v, ok := args[2].(map[string]Builder); ok {
-			rB = v
-		}
+		_, rB = ruleArgs(args)
 	}
 
 	for selVal, lr := range lrs {
@@ -245,22 +230,20 @@ func or(args ...interface{}) Validation {
 	var validators []*Validator
 
 	for _, lr := range lrs {
-		validator := New(&Options{LivrRules: Dictionary{"field": lr}})
-		validator.registerRules(rB)
-		validator.prepare()
-		validators = append(validators, validator)
+		validators = append(validators, fieldValidator(lr, rB))
 	}
 
 	return func(val interface{}, builders ...interface{}) (interface{}, interface{}) {
 		// No check for an empty value: the sets of rules decide (they may contain "required").
+		// The rules see the fields next to the validated field.
 		var lastErr interface{}
 		for _, validator := range validators {
-			r, err := validator.Validate(Dictionary{"field": val})
+			r, err := validator.validateField(val, containingObject(builders))
 
-			if err != nil && r == nil {
-				lastErr = validator.Errors()["field"]
+			if err != nil {
+				lastErr = err
 			} else {
-				return r["field"], nil
+				return r, nil
 			}
 		}
 
@@ -286,9 +269,7 @@ func variableObject(args ...interface{}) Validation {
 		if v, ok := args[1].(Dictionary); ok {
 			lrs = v
 		}
-		if v, ok := args[2].(map[string]Builder); ok {
-			rB = v
-		}
+		_, rB = ruleArgs(args)
 	}
 
 	for selVal, lr := range lrs {
@@ -351,4 +332,163 @@ func selectValidator(validators map[string]*Validator, object interface{}, selFi
 	}
 
 	return validators[selVal]
+}
+
+// when - validate the value with rules that depend on another field:
+// when(reference, condition, rulesIfTrue[, rulesIfFalse]) or when(reference, cases).
+func when(args ...interface{}) Validation {
+	args, rB := ruleArgs(args)
+	if len(args) < 2 {
+		schemaErrorf("Rule when takes a reference and cases, or a reference, a condition and rules")
+	}
+	path := parseReference(args[0], "when")
+
+	if len(args) == 2 {
+		return whenCases(path, args[1], rB)
+	}
+
+	condition := branchValidator(args[1], rB)
+	ifTrue := branchValidator(args[2], rB)
+	var ifFalse *Validator
+	if len(args) > 3 {
+		ifFalse = branchValidator(args[3], rB)
+	}
+
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
+		params := containingObject(builders)
+		refValue := resolveReference(params, path)
+
+		// The condition rules see the fields next to the validated field, their output is discarded.
+		branch := ifFalse
+		if !isEmpty(refValue) {
+			if _, err := condition.validateField(refValue, params); err == nil {
+				branch = ifTrue
+			}
+		}
+
+		// Without rules if false the value passes unchanged.
+		if branch == nil {
+			return value, nil
+		}
+		return branch.validateField(value, params)
+	}
+}
+
+// whenCases - the switch form of "when": the rules of the case named by the referenced value.
+func whenCases(path []string, rawCases interface{}, rB map[string]Builder) Validation {
+	cases, ok := rawCases.(Dictionary)
+	if !ok || len(cases) == 0 {
+		schemaErrorf("Rule when takes an object of cases with at least one case")
+	}
+
+	validators := make(map[string]*Validator, len(cases))
+	for name, rules := range cases {
+		validators[name] = branchValidator(rules, rB)
+	}
+
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
+		params := containingObject(builders)
+		refValue := resolveReference(params, path)
+
+		var branch *Validator
+		if !isEmpty(refValue) {
+			if name, ok := stringForm(refValue); ok {
+				branch = validators[name]
+			}
+		}
+
+		// An empty or unknown referenced value chooses no case.
+		if branch == nil {
+			if isEmpty(value) {
+				return value, nil
+			}
+			return nil, errors.New("NOT_ALLOWED_VALUE")
+		}
+		return branch.validateField(value, params)
+	}
+}
+
+// branchValidator - a validator of the rules of a branch of "when", not an empty list of rules.
+func branchValidator(rules interface{}, rB map[string]Builder) *Validator {
+	if list, ok := rules.([]interface{}); ok && len(list) == 0 {
+		schemaErrorf(`Rule when got an empty list of rules, use "any" for no rules`)
+	}
+	return fieldValidator(rules, rB)
+}
+
+// rulesArg - the rules of "values" and "keys", given like the rules of list_of:
+// values("required", "string") or values(["required", "string"]).
+func rulesArg(name string, args []interface{}) ([]interface{}, map[string]Builder) {
+	args, rB := ruleArgs(args)
+	if len(args) > 0 {
+		if list, ok := args[0].([]interface{}); ok {
+			args = list
+		}
+	}
+	if len(args) == 0 {
+		schemaErrorf("Rule %s needs rules", name)
+	}
+	return args, rB
+}
+
+// values - check that validated value is an object and validate its every value.
+func values(args ...interface{}) Validation {
+	validator := fieldValidator(rulesArg("values", args))
+
+	return func(object interface{}, builders ...interface{}) (interface{}, interface{}) {
+		if isEmpty(object) {
+			return object, nil
+		}
+
+		obj, ok := object.(Dictionary)
+		if !ok {
+			return nil, errors.New("FORMAT_ERROR")
+		}
+
+		results := make(Dictionary, len(obj))
+		errs := make(Dictionary)
+		for key, value := range obj {
+			// Values have no containing object: a reference in their rules is a missing value.
+			r, err := validator.validateField(value, nil)
+			if err != nil {
+				errs[key] = err
+			} else {
+				results[key] = r
+			}
+		}
+
+		if len(errs) > 0 {
+			return nil, errs
+		}
+		return results, nil
+	}
+}
+
+// keys - check that validated value is an object and check its every key.
+func keys(args ...interface{}) Validation {
+	validator := fieldValidator(rulesArg("keys", args))
+
+	return func(object interface{}, builders ...interface{}) (interface{}, interface{}) {
+		if isEmpty(object) {
+			return object, nil
+		}
+
+		obj, ok := object.(Dictionary)
+		if !ok {
+			return nil, errors.New("FORMAT_ERROR")
+		}
+
+		errs := make(Dictionary)
+		for key := range obj {
+			// The rules only check the key, their output is ignored.
+			if _, err := validator.validateField(key, nil); err != nil {
+				errs[key] = errors.New("WRONG_KEY")
+			}
+		}
+
+		if len(errs) > 0 {
+			return nil, errs
+		}
+		return object, nil
+	}
 }

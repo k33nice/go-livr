@@ -124,3 +124,38 @@ func TestAliasInMetaRules(t *testing.T) {
 		t.Errorf("got %s, want %s", data, want)
 	}
 }
+
+func TestMetaRulesWithExtraArgument(t *testing.T) {
+	// Arguments after the ones a rule takes are ignored, the custom rules stay available.
+	v := livr.New(&livr.Options{LivrRules: livr.Dictionary{
+		"nested_object":   livr.Dictionary{"nested_object": []interface{}{livr.Dictionary{"a": "short"}, "x"}},
+		"list_of":         livr.Dictionary{"list_of": []interface{}{[]interface{}{"short"}, "x"}},
+		"list_of_objects": livr.Dictionary{"list_of_objects": []interface{}{livr.Dictionary{"a": "short"}, "x"}},
+		"list_of_different_objects": livr.Dictionary{"list_of_different_objects": []interface{}{
+			"type", livr.Dictionary{"x": livr.Dictionary{"a": "short"}}, "x",
+		}},
+		"variable_object": livr.Dictionary{"variable_object": []interface{}{
+			"type", livr.Dictionary{"x": livr.Dictionary{"a": "short"}}, "x",
+		}},
+		"like": livr.Dictionary{"like": []interface{}{"^[a-z]+$", "i", "x"}},
+	}})
+	v.RegisterAliasedRule(livr.Alias{Name: "short", Rules: livr.Dictionary{"max_length": 2.0}, Error: "TOO_LONG"})
+
+	_, err := v.Validate(livr.Dictionary{
+		"nested_object":             livr.Dictionary{"a": "abc"},
+		"list_of":                   []interface{}{"abc"},
+		"list_of_objects":           []interface{}{livr.Dictionary{"a": "abc"}},
+		"list_of_different_objects": []interface{}{livr.Dictionary{"type": "x", "a": "abc"}},
+		"variable_object":           livr.Dictionary{"type": "x", "a": "abc"},
+		"like":                      "ABC",
+	})
+	if err == nil {
+		t.Fatal("validation passed, must fail")
+	}
+	data, _ := json.Marshal(indirectErrors(v.Errors()))
+	want := `{"list_of":["TOO_LONG"],"list_of_different_objects":[{"a":"TOO_LONG"}],` +
+		`"list_of_objects":[{"a":"TOO_LONG"}],"nested_object":{"a":"TOO_LONG"},"variable_object":{"a":"TOO_LONG"}}`
+	if string(data) != want {
+		t.Errorf("got %s, want %s", data, want)
+	}
+}

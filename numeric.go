@@ -223,3 +223,48 @@ func positiveDecimal(args ...interface{}) Validation {
 		}
 	}
 }
+
+// maxDecimals - make sure that validated value is a number with at most the specified number of
+// digits after the decimal point, trailing zeros do not count.
+func maxDecimals(args ...interface{}) Validation {
+	args, _ = ruleArgs(args)
+	var max int
+	ok := len(args) > 0
+	if ok {
+		max, ok = countArg(args[0])
+	}
+	if !ok {
+		schemaErrorf("Rule max_decimals takes a non-negative integer")
+	}
+
+	return func(value interface{}, builders ...interface{}) (interface{}, interface{}) {
+		if isEmpty(value) {
+			return value, nil
+		}
+
+		var decimals int
+		var f float64
+		switch v := value.(type) {
+		case string:
+			// Counted as written, so "0.10000000000000000001" has 20 digits.
+			decimals = countDecimals(v)
+			var err error
+			if f, err = strconv.ParseFloat(v, 64); decimals < 0 || err != nil {
+				return nil, errors.New("NOT_NUMBER")
+			}
+		case bool:
+			return nil, errors.New("NOT_NUMBER")
+		default:
+			var ok bool
+			if f, ok = number(v); !ok {
+				return nil, errors.New("FORMAT_ERROR")
+			}
+			decimals = countDecimals(formatNumber(f))
+		}
+
+		if decimals > max {
+			return nil, errors.New("TOO_MANY_DECIMALS")
+		}
+		return f, nil
+	}
+}
